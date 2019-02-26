@@ -1,9 +1,11 @@
-var express = require('express'),
-app = express(),
-bunyanLogger = require('../');
+/* eslint-disable */
+const express = require('express');
 
-app.get('/', function(req, res) {
-    throw new Error();
+const app = express();
+const bunyanLogger = require('../');
+
+app.get('/', (req, res) => {
+  throw new Error();
 });
 
 app.use(bunyanLogger());

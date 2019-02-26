@@ -1,46 +1,43 @@
-var express = require('express');
-var assert = require('assert');
-var request = require('supertest');
-var through = require('through2');
-var bunyanLogger = require('../');
-var util = require('util');
+/* eslint-disable */
 
+const express = require('express');
+const assert = require('assert');
+const request = require('supertest');
+const through = require('through2');
+const util = require('util');
+const bunyanLogger = require('../');
 
 require('buffer');
 
-
 function st(end) {
   return through(function (chunk, enc, next) {
-    if(this.content)
-      this.content = Buffer.concat([this.content, chunk]);
-    else
-      this.content = chunk;
+    if (this.content) this.content = Buffer.concat([this.content, chunk]);
+    else this.content = chunk;
     next();
   }, end);
 }
 
 
-describe('bunyan-logger', function() {
-  it('test logger', function(done) {
-    var app = express();
-    var output = st();
+describe('bunyan-logger', () => {
+  it('test logger', (done) => {
+    const app = express();
+    const output = st();
 
 
     app.use(bunyanLogger({
-      stream: output
+      stream: output,
     }));
 
-    app.get('/', function(req, res) {
+    app.get('/', (req, res) => {
       res.send('GET /');
     });
 
     request(app)
       .get('/')
-      .expect('GET /', function(err, res) {
-        if(err)
-          done(err);
+      .expect('GET /', (err, res) => {
+        if (err) done(err);
         else {
-          var json = JSON.parse(output.content.toString());
+          const json = JSON.parse(output.content.toString());
           assert.equal(json.name, 'express');
           assert.equal(json.url, '/');
           assert.equal(json['status-code'], 200);
@@ -50,17 +47,17 @@ describe('bunyan-logger', function() {
       });
   });
 
-  it('test 404 statusCode', function(done) {
-    var app = express();
-    var output = st();
+  it('test 404 statusCode', (done) => {
+    const app = express();
+    const output = st();
     app.use(bunyanLogger({
-      stream: output
+      stream: output,
     }));
 
     request(app)
       .get('/missing')
-      .end(function(err, res) {
-        var json = JSON.parse(output.content.toString());
+      .end((err, res) => {
+        const json = JSON.parse(output.content.toString());
         assert.equal(json.name, 'express');
         assert.equal(json.url, '/missing');
         assert.equal(json['status-code'], 404);
@@ -70,33 +67,33 @@ describe('bunyan-logger', function() {
       });
   });
 
-  it('test request id', function(done) {
-    var app = express();
-    var output = st();
+  it('test request id', (done) => {
+    const app = express();
+    const output = st();
     app.use(bunyanLogger({
-      stream: output
+      stream: output,
     }));
 
-    app.use(function(req, res, next) {
+    app.use((req, res, next) => {
       req.log.info('middleware');
       next();
     });
 
-    app.get('/', function(req, res) {
+    app.get('/', (req, res) => {
       res.send('GET /');
     });
 
     request(app)
       .get('/')
-      .expect('GET /', function(err, res) {
-        var lines = output.content.toString().split('\n');
+      .expect('GET /', (err, res) => {
+        const lines = output.content.toString().split('\n');
         assert.equal(lines.length, 3);
         assert.equal(lines[2], '');
 
-        var json = JSON.parse(lines[0]);
+        let json = JSON.parse(lines[0]);
         assert.equal(json.name, 'express');
         assert(json.req_id);
-        var req_id = json.req_id;
+        const { req_id } = json;
         assert.equal(json.msg, 'middleware');
 
         json = JSON.parse(lines[1]);
@@ -108,25 +105,25 @@ describe('bunyan-logger', function() {
   });
 
 
-  it('test options.genReqId', function(done) {
-    var app = express();
-    var output = st();
-    var id = 0;
+  it('test options.genReqId', (done) => {
+    const app = express();
+    const output = st();
+    let id = 0;
     app.use(bunyanLogger({
       stream: output,
-      genReqId: function(req) {
+      genReqId(req) {
         return id++;
-      }
+      },
     }));
 
-    app.get('/', function(req, res) {
+    app.get('/', (req, res) => {
       res.send('GET /');
     });
 
     request(app)
       .get('/')
-      .expect('GET /', function(err, res) {
-        var json = JSON.parse(output.content.toString());
+      .expect('GET /', (err, res) => {
+        const json = JSON.parse(output.content.toString());
         assert.equal(json.name, 'express');
         assert.equal(json.req_id, 0);
 
@@ -134,32 +131,32 @@ describe('bunyan-logger', function() {
       });
   });
 
-  describe('test obfuscate', function() {
-    var app, output,
-        USERNAME = 'MY_USER',
-        PASSWORD = 'MY_PASSWORD';
+  describe('test obfuscate', () => {
+    let app; let output;
+    const USERNAME = 'MY_USER';
+    const PASSWORD = 'MY_PASSWORD';
 
-    beforeEach(function() {
+    beforeEach(() => {
       app = express();
       app.use(require('body-parser').json());
       output = st();
     });
 
-    it('obfuscates body', function(done) {
+    it('obfuscates body', (done) => {
       app.use(bunyanLogger({
         stream: output,
-        obfuscate: ['req.body.password']
+        obfuscate: ['req.body.password'],
       }));
 
-      app.post('/', function(req, res) {
+      app.post('/', (req, res) => {
         res.send('POST /');
       });
 
       request(app)
         .post('/')
-        .send({username: USERNAME, password: PASSWORD})
-        .expect('POST /', function(err, res) {
-          var json = JSON.parse(output.content.toString());
+        .send({ username: USERNAME, password: PASSWORD })
+        .expect('POST /', (err, res) => {
+          const json = JSON.parse(output.content.toString());
           assert.equal(json.name, 'express');
           assert.equal(json.url, '/');
           assert.equal(json['status-code'], 200);
@@ -172,24 +169,24 @@ describe('bunyan-logger', function() {
         });
     });
 
-    it('uses custom placeholder', function(done) {
-      var PLACEHOLDER = 'AAAAAA';
+    it('uses custom placeholder', (done) => {
+      const PLACEHOLDER = 'AAAAAA';
 
       app.use(bunyanLogger({
         stream: output,
         obfuscate: ['req.body.password'],
-        obfuscatePlaceholder: PLACEHOLDER
+        obfuscatePlaceholder: PLACEHOLDER,
       }));
 
-      app.post('/', function(req, res) {
+      app.post('/', (req, res) => {
         res.send('POST /');
       });
 
       request(app)
         .post('/')
-        .send({username: USERNAME, password: PASSWORD})
-        .expect('POST /', function(err, res) {
-          var json = JSON.parse(output.content.toString());
+        .send({ username: USERNAME, password: PASSWORD })
+        .expect('POST /', (err, res) => {
+          const json = JSON.parse(output.content.toString());
           assert.equal(json.name, 'express');
           assert.equal(json.url, '/');
           assert.equal(json['status-code'], 200);
@@ -202,21 +199,21 @@ describe('bunyan-logger', function() {
         });
     });
 
-    it('obfuscates short-body', function(done) {
+    it('obfuscates short-body', (done) => {
       app.use(bunyanLogger({
         stream: output,
-        obfuscate: ['req.body.p']
+        obfuscate: ['req.body.p'],
       }));
 
-      app.post('/', function(req, res) {
+      app.post('/', (req, res) => {
         res.send('POST /');
       });
 
       request(app)
         .post('/')
-        .send({p: 'MY_PASSWORD'})
-        .expect('POST /', function(err, res) {
-          var json = JSON.parse(output.content.toString());
+        .send({ p: 'MY_PASSWORD' })
+        .expect('POST /', (err, res) => {
+          const json = JSON.parse(output.content.toString());
           assert.equal(json.name, 'express');
           assert.equal(json.url, '/');
           assert.equal(json['status-code'], 200);
@@ -225,7 +222,7 @@ describe('bunyan-logger', function() {
 
           // We specifically chose a short key here to ensure our test was valid
           // If there were multiple keys, there's a chance it won't appear
-          expected = util.inspect({p: '[HIDDEN]'}).substring(0, 20);
+          expected = util.inspect({ p: '[HIDDEN]' }).substring(0, 20);
           assert.equal(json['short-body'], expected);
 
           done();
@@ -233,22 +230,22 @@ describe('bunyan-logger', function() {
     });
   });
 
-  it('test excludes', function(done) {
-    var app = express();
-    var output = st();
+  it('test excludes', (done) => {
+    const app = express();
+    const output = st();
     app.use(bunyanLogger({
       stream: output,
-      excludes: ['req', 'res', 'nont']
+      excludes: ['req', 'res', 'nont'],
     }));
 
-    app.get('/', function(req, res) {
+    app.get('/', (req, res) => {
       res.send('GET /');
     });
 
     request(app)
       .get('/')
-      .expect('GET /', function(err, res) {
-        var json = JSON.parse(output.content.toString());
+      .expect('GET /', (err, res) => {
+        const json = JSON.parse(output.content.toString());
         assert.equal(json.name, 'express');
         assert.equal(json.url, '/');
         assert.equal(json['status-code'], 200);
@@ -260,22 +257,22 @@ describe('bunyan-logger', function() {
   });
 
 
-  it('test excludes all', function(done) {
-    var app = express();
-    var output = st();
+  it('test excludes all', (done) => {
+    const app = express();
+    const output = st();
     app.use(bunyanLogger({
       stream: output,
-      excludes: ['req', '*']
+      excludes: ['req', '*'],
     }));
 
-    app.get('/', function(req, res) {
+    app.get('/', (req, res) => {
       res.send('GET /');
     });
 
     request(app)
       .get('/')
-      .expect('GET /', function(err, res) {
-        var json = JSON.parse(output.content.toString());
+      .expect('GET /', (err, res) => {
+        const json = JSON.parse(output.content.toString());
         assert.equal(json.name, 'express');
         assert(!json.url);
         assert(!json['status-code']);
@@ -286,21 +283,21 @@ describe('bunyan-logger', function() {
       });
   });
 
-  it('test errorLogger', function(done) {
-    var app = express();
-    var output = st();
-    app.get('/', function(req, res) {
+  it('test errorLogger', (done) => {
+    const app = express();
+    const output = st();
+    app.get('/', (req, res) => {
       throw new Error();
     });
 
     app.use(bunyanLogger.errorLogger({
-      stream: output
+      stream: output,
     }));
 
     request(app)
       .get('/')
-      .end(function(err, res) {
-        var json = JSON.parse(output.content.toString());
+      .end((err, res) => {
+        const json = JSON.parse(output.content.toString());
         assert.equal(json.name, 'express');
         assert.equal(json.url, '/');
         assert.equal(json['status-code'], 500);
@@ -310,20 +307,20 @@ describe('bunyan-logger', function() {
       });
   });
 
-  it('errorLogger should call next error middleware', function(done) {
-    var middlewareCalled = false;
-    var app = express();
-    var output = st();
+  it('errorLogger should call next error middleware', (done) => {
+    let middlewareCalled = false;
+    const app = express();
+    const output = st();
 
-    app.get('/', function(req, res) {
+    app.get('/', (req, res) => {
       throw new Error();
     });
 
     app.use(bunyanLogger.errorLogger({
-      stream: output
+      stream: output,
     }));
 
-    app.use(function (err, req, res, next) {
+    app.use((err, req, res, next) => {
       middlewareCalled = true;
       next(err);
     });
@@ -331,7 +328,7 @@ describe('bunyan-logger', function() {
 
     request(app)
       .get('/')
-      .end(function () {
+      .end(() => {
         if (!middlewareCalled) {
           throw new Error('middleware was not called');
         }
@@ -339,57 +336,57 @@ describe('bunyan-logger', function() {
       });
   });
 
-  it('test options.includesFn', function (done) {
-    var app = express();
-    var output = st();
+  it('test options.includesFn', (done) => {
+    const app = express();
+    const output = st();
     app.use(bunyanLogger({
       stream: output,
-      includesFn: function (req, res) {
+      includesFn(req, res) {
         return {
           user: {
             name: 'Eric',
-            _id: '546f80240a186fd6181472a9'
-          }
+            _id: '546f80240a186fd6181472a9',
+          },
         };
-      }
+      },
     }));
 
-    app.get('/', function (req, res) {
+    app.get('/', (req, res) => {
       res.send('GET /');
     });
 
     request(app)
-        .get('/')
-        .expect('user property to be present in log', function (err, res) {
-          var json = JSON.parse(output.content.toString());
-          assert(json.user);
-          assert.equal(json.user.name, 'Eric');
-          done();
-        });
+      .get('/')
+      .expect('user property to be present in log', (err, res) => {
+        const json = JSON.parse(output.content.toString());
+        assert(json.user);
+        assert.equal(json.user.name, 'Eric');
+        done();
+      });
   });
 
-  it('test options.levelFn', function (done) {
-    var app = express();
-    var output = st();
+  it('test options.levelFn', (done) => {
+    const app = express();
+    const output = st();
     app.use(bunyanLogger({
       stream: output,
-      levelFn: function (status, err, meta) {
+      levelFn(status, err, meta) {
         if (meta && meta['response-time'] !== undefined) {
           return 'fatal';
         }
-      }
+      },
     }));
 
-    app.get('/', function (req, res) {
+    app.get('/', (req, res) => {
       res.send('GET /');
     });
 
     request(app)
-        .get('/')
-        .expect('error level fatal', function (err, res) {
-          var json = JSON.parse(output.content.toString());
-          assert.equal(json.level, 60);
-          done();
-        });
+      .get('/')
+      .expect('error level fatal', (err, res) => {
+        const json = JSON.parse(output.content.toString());
+        assert.equal(json.level, 60);
+        done();
+      });
   });
 });

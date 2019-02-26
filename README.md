@@ -2,35 +2,29 @@
 
 A express logger middleware powered by [bunyan](https://github.com/trentm/node-bunyan).
 
-[![Build Status](https://travis-ci.org/villadora/express-bunyan-logger.svg?branch=master)](https://travis-ci.org/villadora/express-bunyan-logger) [![dependencies](https://david-dm.org/villadora/express-bunyan-logger.svg)](https://david-dm.org/villadora/express-bunyan-logger)
-
-
-## Note
-
-This year as work content change, I have no spare time to maintaining the node modules, if anyone want to take or keep maintaining, just contact me via jky239@gmail.com with Title contains: "Wanted: npm package xxxx". Thx.
 
 ## Installation
 
-    npm install express-bunyan-logger
+    npm install @xtrctio/express-bunyan-logger
 
 ## Usage
 
 To use the logger:
 
 ```javascript
-app.use(require('express-bunyan-logger')());
+app.use(require('@xtrctio/express-bunyan-logger')());
 ```
 
 To use the errorLogger:
 
 ```javascript
-app.use(require('express-bunyan-logger').errorLogger());
+app.use(require('@xtrctio/express-bunyan-logger').errorLogger());
 ```
 
 And you can also pass bunyan logger options to the logger middleware:
 
 ```javascript
-app.use(require('express-bunyan-logger')({
+app.use(require('@xtrctio/express-bunyan-logger')({
     name: 'logger',
     streams: [{
         level: 'info',
@@ -42,14 +36,14 @@ app.use(require('express-bunyan-logger')({
 Change default format:
 
 ```javascript
-app.use(require('express-bunyan-logger')({
+app.use(require('@xtrctio/express-bunyan-logger')({
     format: ":remote-address - :user-agent[major] custom logger"
 });
 ```
 And a child logger will be attached to each request object:
 
 ```javascript
-app.use(require('express-bunyan-logger')();
+app.use(require('@xtrctio/express-bunyan-logger')();
 app.use(function(req, res, next) {
     req.log.debug('this is debug in middleware');
     next();
@@ -138,7 +132,7 @@ If you have already use other middleware/framework to generate request id, you c
 
 ```javascript
 // suppose connect-requestid middleware is already added.
-app.use(require('express-bunyan-logger')({
+app.use(require('@xtrctio/express-bunyan-logger')({
     genReqId: function(req) {
        return req.id;
     }
